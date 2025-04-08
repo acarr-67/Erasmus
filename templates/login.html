@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Giriş</title>
-</head>
+<head><title>Giriş</title></head>
 <body>
     <h2>Giriş Yap</h2>
     {% if error %}
@@ -15,5 +13,6 @@
         <input type="password" name="password"><br><br>
         <button type="submit">Giriş Yap</button>
     </form>
+    <p><a href="{{ url_for('register') }}">Hesabınız yok mu? Kayıt olun</a></p>
 </body>
 </html>
