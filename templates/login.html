@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Giriş</title>
+</head>
+<body>
+    <h2>Giriş Yap</h2>
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+    <form method="POST">
+        <label>Kullanıcı Adı:</label><br>
+        <input type="text" name="username"><br>
+        <label>Şifre:</label><br>
+        <input type="password" name="password"><br><br>
+        <button type="submit">Giriş Yap</button>
+    </form>
+</body>
+</html>
