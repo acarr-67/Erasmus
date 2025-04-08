@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Kontrol Paneli - ESP Kontrol Paneli{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>Kontrol Paneli</h1>
+    <p>Hoş geldiniz, {{ session.username }}!</p>
+    
+    <div class="dashboard-section">
+        <div class="dashboard-card x-value-card">
+            <h2>X Değişkeni</h2>
+            <div class="x-value-display" id="x-value-display">
+                <div class="x-value-number">{{ x_value }}</div>
+            </div>
+            
+            <form method="POST" action="{{ url_for('update_x_web') }}" class="x-value-form">
+                <div class="form-group">
+                    <label for="x_value">Yeni X Değeri:</label>
+                    <input type="number" id="x_value" name="x_value" value="{{ x_value }}" required>
+                </div>
+                <button type="submit" class="btn-primary">Güncelle</button>
+            </form>
+        </div>
+        
+        <div class="dashboard-card">
+            <h2>ESP Cihazları için API Bilgisi</h2>
+            <div class="api-info">
+                <div class="api-endpoint">
+                    <h3>X Değişkenini Almak için:</h3>
+                    <code>GET /api/x</code>
+                    <p>Cevap:</p>
+                    <pre>{"value": {{ x_value }}}</pre>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h3>X Değişkenini Güncellemek için:</h3>
+                    <code>POST /api/x</code>
+                    <p>İstek Gövdesi:</p>
+                    <pre>{"value": yeni_değer}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-section">
+        <h2>X Değişkeni Geçmişi</h2>
+        <div class="logs-table-container">
+            <table class="logs-table">
+                <thead>
+                    <tr>
+                        <th>Değer</th>
+                        <th>Güncelleyen</th>
+                        <th>Tarih/Saat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.value }}</td>
+                        <td>{{ log.updated_by }}</td>
+                        <td>{{ log.updated_at.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not logs %}
+                    <tr>
+                        <td colspan="3" class="no-data">Henüz kayıt yok</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // X değerini periyodik olarak güncelleme (5 saniyede bir)
+    function updateXValue() {
+        fetch('/api/x')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('x-value-display').querySelector('.x-value-number').textContent = data.value;
+            })
+            .catch(error => console.error('X değerini alma hatası:', error));
+    }
+    
+    // Sayfa yüklendiğinde periyodik güncellemeyi başlat
+    document.addEventListener('DOMContentLoaded', function() {
+        // İlk değeri hemen al
+        updateXValue();
+        
+        // 5 saniyede bir güncelle
+        setInterval(updateXValue, 5000);
+    });
+</script>
+{% endblock %}
