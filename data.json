@@ -1,1 +1,7 @@
-[]
+{
+  "sicaklik": 23.5,
+  "nem": 55,
+  "toprak_nem": 650,
+  "sicaklik_durumu": "Normal",
+  "toprak_durumu": "Kuru"
+}
