@@ -184,3 +184,93 @@ def update_x_web():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+# app.py dosyasına eklenecek kodlar (mevcut kodu değiştirmeyin, aşağıdaki kodları sonuna ekleyin)
+
+# Sensör değerleri için model
+class SensorData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    temperature = db.Column(db.Float, nullable=False)
+    humidity = db.Column(db.Float, nullable=False)
+    soil_moisture = db.Column(db.Integer, nullable=False)
+    temp_status = db.Column(db.String(20), nullable=False)
+    soil_status = db.Column(db.String(20), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<SensorData {self.id}: Temp: {self.temperature}°C, Soil: {self.soil_moisture}>'
+
+# Veritabanını güncelle
+with app.app_context():
+    db.create_all()
+
+# Sensör verilerini al
+@app.route('/api/sensor_data', methods=['POST'])
+def receive_sensor_data():
+    data = request.get_json()
+    
+    if not all(key in data for key in ['temperature', 'humidity', 'soil_moisture', 'temp_status', 'soil_status']):
+        return jsonify({"success": False, "error": "Eksik veri"}), 400
+    
+    try:
+        # Yeni sensör verisi oluştur
+        new_data = SensorData(
+            temperature=float(data['temperature']),
+            humidity=float(data['humidity']),
+            soil_moisture=int(data['soil_moisture']),
+            temp_status=data['temp_status'],
+            soil_status=data['soil_status']
+        )
+        
+        # Veritabanına kaydet
+        db.session.add(new_data)
+        db.session.commit()
+        
+        return jsonify({"success": True, "message": "Veriler başarıyla kaydedildi"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# Son sensör verilerini görüntüle
+@app.route('/sensor_dashboard')
+@login_required
+def sensor_dashboard():
+    # En son eklenen veriyi al
+    latest_data = SensorData.query.order_by(SensorData.timestamp.desc()).first()
+    
+    # Son 24 saate ait sıcaklık verileri
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    temp_data = SensorData.query.filter(SensorData.timestamp >= one_day_ago).all()
+    
+    # Grafik için veri hazırla
+    timestamps = [data.timestamp.strftime('%H:%M') for data in temp_data]
+    temperatures = [data.temperature for data in temp_data]
+    humidity_values = [data.humidity for data in temp_data]
+    soil_values = [data.soil_moisture for data in temp_data]
+    
+    return render_template(
+        'sensor_dashboard.html', 
+        latest_data=latest_data,
+        timestamps=timestamps,
+        temperatures=temperatures,
+        humidity_values=humidity_values,
+        soil_values=soil_values
+    )
+
+# API ile en son sensör verilerini al 
+@app.route('/api/latest_sensor_data', methods=['GET'])
+def get_latest_sensor_data():
+    latest_data = SensorData.query.order_by(SensorData.timestamp.desc()).first()
+    
+    if not latest_data:
+        return jsonify({"success": False, "error": "Henüz sensör verisi yok"}), 404
+    
+    return jsonify({
+        "success": True,
+        "data": {
+            "temperature": latest_data.temperature,
+            "humidity": latest_data.humidity,
+            "soil_moisture": latest_data.soil_moisture,
+            "temp_status": latest_data.temp_status,
+            "soil_status": latest_data.soil_status,
+            "timestamp": latest_data.timestamp.strftime('%d.%m.%Y %H:%M:%S')
+        }
+    })
